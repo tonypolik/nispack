@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+require "nispack"
+require "getopt/long"
+
+def help
+	puts "nispack tool by tonypolik"
+	puts "version: #{Nispack::VERSION}"
+	puts "  Usage:"
+	puts "    nispack -f file.dat -e file1 -e file2"
+	puts "      extract file1 and file2 from file.dat"
+	puts "    nispack -f file.dat -u"
+	puts "      extract ALL files from file.dat in a default directory"
+	puts "    nispack -f file.dat -u -d dir"
+	puts "      extract all files from file.dat in a directory named dir"
+	puts "    nispack -f file.dat -c"
+	puts "      create a new nispack file named file.dat using all files in the current directory"
+	puts "    nispack -f file.dat -c -d dir"
+	puts "      create a new nispack file named file.dat using all files in the 'dir' directory"
+	exit
+end
+
+help if ARGV == []
+
+opts = Getopt::Long.getopts(
+	["--help", "-h", Getopt::BOOLEAN],
+	["--file", "-f", Getopt::REQUIRED],
+	["--unpack", "-u", Getopt::BOOLEAN],
+	["--extract", "-e", Getopt::REQUIRED],
+	["--create", "-c", Getopt::BOOLEAN],
+	["--dir", "-d", Getopt::REQUIRED]
+)
+
+help if opts["help"]
+
+unless opts.has_key?("file")
+	raise "Must use the -f or --file flag to select a nispack file to read or create."
+end
+
+a, b, c = "extract", "create", "unpack"
+3.times do
+	if opts.has_key?(a) and (opts.has_key?(b) or opts.has_key?(c))
+		raise "Can't use --#{a} with --#{b} or -- {c}"
+	end
+	x=a; a=b; b=c; c=x 
+end
+
+
+if opts["extract"] and opts["dir"]
+	raise "Can't use --dir with --extract"
+end
+
+case opts["extract"]
+	when String; Nispack.open(opts["file"]) {|n| n.extract(opts["extract"])}
+	when Array; opts["extract"].each {|x| Nispack.open(opts["file"]) {|n| n.extract(x)}}
+end
+
+if opts["unpack"]
+	case opts["dir"]
+		when nil; Nispack.open(opts["file"]) {|n| n.extract_all}
+		else;     Nispack.open(opts["file"]) {|n| n.extract_all(opts["dir"])}
+	end
+end
+
+if opts["create"]
+	case opts["dir"]
+		when nil; Nispack.create_from_directory(:name => opts["file"])
+		else;     Nispack.create_from_directory(:name => opts["file"], :dir => opts["dir"])
+	end
+end
+
