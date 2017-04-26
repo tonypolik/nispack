@@ -1,10 +1,10 @@
-#Nispack
+# Nispack
 
-###Install
-gem install nispack
+### Install
+`gem install nispack`
 
-###Usage
-run nispack --help
+### Usage
+run `nispack --help`
 
 
 
